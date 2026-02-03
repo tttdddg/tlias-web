@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.mapper.ClazzMapper">
+    <update id="updateById">
+        update clazz
+        <trim prefix="set" suffixOverrides=",">
+            <if test="id!=null and id!=''">id = #{id},</if>
+            <if test="name!=null and name!=''">name = #{name},</if>
+            <if test="room!=null">room = #{room},</if>
+            <if test="beginDate!=null">begin_date = #{beginDate},</if>
+            <if test="endDate!=null">end_date = #{endDate},</if>
+            <if test="masterId!=null">master_id = #{masterId},</if>
+            <if test="subject!=null">subject = #{subject},</if>
+        </trim>
+        where
+             id=#{id}
+    </update>
+
+    <delete id="deleteByIds">
+        delete from clazz where id in
+                          <foreach collection="ids" item="id" separator="," open="(" close=")">
+                              #{id}
+                          </foreach>
+    </delete>
+
+    <select id="list" resultType="org.example.pojo.Clazz">
+        select
+        c.*,
+        e.name as masterName,
+        case
+        when now() > c.end_date then '已结课'
+        when now() &lt; c.begin_date then '未开班'
+        else '在读中'
+        end as status
+        from clazz c
+        left join emp e on c.master_id = e.id
+        <where>
+            <if test="name != null and name != ''">
+                and c.name like concat('%', #{name}, '%')
+            </if>
+            <if test="begin != null">
+                and c.begin_date >= #{begin}
+            </if>
+            <if test="end != null">
+                and c.end_date &lt;= #{end}
+            </if>
+        </where>
+        order by c.update_time desc
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(*) from clazz c
+        <where>
+            <if test="name != null and name != ''">
+                and c.name like concat('%', #{name}, '%')
+            </if>
+            <if test="begin != null">
+                and c.begin_date &gt;= #{begin}
+            </if>
+            <if test="end != null">
+                and c.end_date &lt;= #{end}
+            </if>
+        </where>
+    </select>
+
+    <select id="countClazzNumData" resultType="java.util.Map">
+        select
+            case  when id=1 then 'JavaEE就业163期'
+                  when id=2 then '前端就业90期'
+                  when id=3 then 'JavaEE就业165期'
+                  when id=4 then 'JavaEE就业166期'
+                  when id=5 then '大数据就业58期'
+                  when id=6 then '移动端就业100期'
+                  else '其他'
+                end as pos,
+            count(*) num
+        from clazz group by id order by num
+    </select>
+</mapper>
